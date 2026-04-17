@@ -16,12 +16,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https \
     bash \
     build-essential \
     ca-certificates \
     curl \
-    ffmpeg \
     git \
+    gnupg \
     libasound2t64 \
     libegl1 \
     libgomp1 \
@@ -45,6 +46,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxxf86vm1 \
     pkg-config \
     tini \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN install -d /etc/apt/keyrings \
+    && curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
+        | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg \
+    && . /etc/os-release \
+    && dpkg_architecture="$(dpkg --print-architecture)" \
+    && cat > /etc/apt/sources.list.d/jellyfin.sources <<EOF
+Types: deb
+URIs: https://repo.jellyfin.org/${ID}
+Suites: ${VERSION_CODENAME}
+Components: main
+Architectures: ${dpkg_architecture}
+Signed-By: /etc/apt/keyrings/jellyfin.gpg
+EOF
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    jellyfin-ffmpeg7 \
+    && ffmpeg_dir="$(find /usr -maxdepth 3 -type f -path '*/jellyfin-ffmpeg*/ffmpeg' | head -n 1)" \
+    && test -n "${ffmpeg_dir}" \
+    && ffmpeg_dir="$(dirname "${ffmpeg_dir}")" \
+    && ln -sf "${ffmpeg_dir}/ffmpeg" /usr/local/bin/ffmpeg \
+    && ln -sf "${ffmpeg_dir}/ffprobe" /usr/local/bin/ffprobe \
+    && if [ -x "${ffmpeg_dir}/ffplay" ]; then ln -sf "${ffmpeg_dir}/ffplay" /usr/local/bin/ffplay; fi \
     && rm -rf /var/lib/apt/lists/*
 
 RUN case "${TARGETARCH}" in \

@@ -197,6 +197,8 @@ The supported Docker workflow for this project is headless CLI only. There are t
 - [Dockerfile.cli.cpu](Dockerfile.cli.cpu): CPU image for `linux/arm64` and `linux/amd64`
 - [Dockerfile.cli.cuda](Dockerfile.cli.cuda): NVIDIA CUDA image for `linux/amd64` only
 
+Both images install `jellyfin-ffmpeg7` from Jellyfin's official Ubuntu repository and symlink its binaries onto `PATH`.
+
 ### Build the image
 
 **Build CPU for Apple Silicon / ARM64:**
