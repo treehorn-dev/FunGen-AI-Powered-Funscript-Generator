@@ -96,16 +96,16 @@ WORKDIR /app
 
 COPY requirements/ /tmp/requirements/
 
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install \
-        -r /tmp/requirements/core.requirements.txt \
-    && python -m pip install \
-        -r /tmp/requirements/cuda.requirements.txt \
-    && python -m pip install \
+RUN python -m pip install --upgrade pip setuptools wheel
+RUN python -m pip install \
+        -r /tmp/requirements/core.requirements.txt
+RUN python -m pip install \
+        -r /tmp/requirements/cuda.requirements.txt
+RUN python -m pip install \
         torch-tensorrt \
         tensorrt \
-        --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
-    && rm -rf /root/.cache/pip /tmp/requirements
+        --extra-index-url https://download.pytorch.org/whl/nightly/cu128
+RUN rm -rf /root/.cache/pip /tmp/requirements
 
 COPY . /app
 

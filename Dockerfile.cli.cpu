@@ -96,11 +96,11 @@ WORKDIR /app
 
 COPY requirements/ /tmp/requirements/
 
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install \
+RUN python -m pip install --upgrade pip setuptools wheel
+RUN python -m pip install \
         -r /tmp/requirements/core.requirements.txt \
-        -r /tmp/requirements/cpu.requirements.txt \
-    && rm -rf /root/.cache/pip /tmp/requirements
+        -r /tmp/requirements/cpu.requirements.txt
+RUN rm -rf /root/.cache/pip /tmp/requirements
 
 COPY . /app
 
