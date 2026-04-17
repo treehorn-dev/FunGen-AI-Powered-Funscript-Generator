@@ -105,6 +105,9 @@ RUN python -m pip install \
 RUN python -m pip install \
         torch-tensorrt \
         tensorrt \
+        torch==2.8.0+cu128 \
+        torchvision==0.23.0+cu128 \
+        torchaudio==2.8.0+cu128 \
         --extra-index-url https://download.pytorch.org/whl/nightly/cu128
 RUN rm -rf /root/.cache/pip /tmp/requirements
 
