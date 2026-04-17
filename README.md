@@ -190,6 +190,117 @@ FunGen launches with a streamlined interface. The control panel (left) has Run a
 
 -----
 
+# Docker CLI
+
+The supported Docker workflow for this project is headless CLI only. There are two Dockerfiles:
+
+- [Dockerfile.cli.cpu](Dockerfile.cli.cpu): CPU image for `linux/arm64` and `linux/amd64`
+- [Dockerfile.cli.cuda](Dockerfile.cli.cuda): NVIDIA CUDA image for `linux/amd64` only
+
+### Build the image
+
+**Build CPU for Apple Silicon / ARM64:**
+
+```bash
+docker build --platform linux/arm64 -f Dockerfile.cli.cpu -t fungen-cli:cpu-arm64 .
+```
+
+**Build CPU for x86_64 / AMD64:**
+
+```bash
+docker build --platform linux/amd64 -f Dockerfile.cli.cpu -t fungen-cli:cpu-amd64 .
+```
+
+**Build NVIDIA CUDA for x86_64 / AMD64:**
+
+```bash
+docker build --platform linux/amd64 -f Dockerfile.cli.cuda -t fungen-cli:cuda-amd64 .
+```
+
+### Check the CLI
+
+```bash
+docker run --rm -it fungen-cli:cpu-arm64 --help
+```
+
+### Run a single video
+
+This example mounts an input video read-only and writes generated output to a local `output/` folder:
+
+```bash
+mkdir -p output
+docker run --rm -it \
+  -v "$(pwd)/input:/data/input:ro" \
+  -v "$(pwd)/output:/data/output" \
+  fungen-cli:cpu-arm64 \
+  /data/input/video.mp4 --output /data/output
+```
+
+### Run a folder recursively
+
+```bash
+mkdir -p output
+docker run --rm -it \
+  -v "$(pwd)/input:/data/input:ro" \
+  -v "$(pwd)/output:/data/output" \
+  fungen-cli:cpu-arm64 \
+  /data/input --recursive --output /data/output
+```
+
+### Example with explicit processing options
+
+```bash
+docker run --rm -it \
+  -v "$(pwd)/input:/data/input:ro" \
+  -v "$(pwd)/output:/data/output" \
+  fungen-cli:cpu-arm64 \
+  /data/input/video.mp4 \
+  --mode 3-stage \
+  --overwrite \
+  --no-copy \
+  --output /data/output
+```
+
+### Optional: persist downloaded assets and models
+
+On first run, FunGen may download UI assets and AI model files. If you want those downloads to survive container deletion, mount persistent locations for them:
+
+```bash
+mkdir -p output cache/assets cache/models cache/ultralytics
+docker run --rm -it \
+  -v "$(pwd)/input:/data/input:ro" \
+  -v "$(pwd)/output:/data/output" \
+  -v "$(pwd)/cache/assets:/app/assets" \
+  -v "$(pwd)/cache/models:/app/models" \
+  -v "$(pwd)/cache/ultralytics:/app/config/ultralytics" \
+  fungen-cli:cpu-arm64 \
+  /data/input/video.mp4 --output /data/output
+```
+
+### Run with NVIDIA GPU on Linux
+
+Use the CUDA image only on a Linux host with the NVIDIA Container Toolkit installed:
+
+```bash
+mkdir -p output cache/assets cache/models cache/ultralytics
+docker run --rm -it --gpus all \
+  -v "$(pwd)/input:/data/input:ro" \
+  -v "$(pwd)/output:/data/output" \
+  -v "$(pwd)/cache/assets:/app/assets" \
+  -v "$(pwd)/cache/models:/app/models" \
+  -v "$(pwd)/cache/ultralytics:/app/config/ultralytics" \
+  fungen-cli:cuda-amd64 \
+  /data/input/video.mp4 --output /data/output
+```
+
+### Notes
+
+- The container entrypoint is `python main.py`, so any CLI arguments after the image name are passed directly to FunGen.
+- `Dockerfile.cli.cpu` is the portable default and works for both `arm64` and `amd64`.
+- `Dockerfile.cli.cuda` is for `amd64` NVIDIA Linux hosts only.
+- `--output /data/output` is the safest pattern in Docker because it keeps generated files on a mounted host directory.
+- If you want to avoid repeated downloads, mount `/app/models`, `/app/assets`, and `/app/config/ultralytics` to persistent host directories.
+
 # Command Line Usage
 
 FunGen can be run in two modes: a graphical user interface (GUI) or a command-line interface (CLI) for automation and batch processing.

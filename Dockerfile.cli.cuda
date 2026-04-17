@@ -1,0 +1,81 @@
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+
+ARG TARGETARCH
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    CONDA_DIR=/opt/conda \
+    PATH=/opt/conda/bin:$PATH \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONNOUSERSITE=1 \
+    YOLO_TELEMETRY=False \
+    YOLO_OFFLINE=True \
+    KMP_DUPLICATE_LIB_OK=TRUE \
+    YOLO_CONFIG_DIR=/app/config/ultralytics \
+    MPLCONFIGDIR=/tmp/matplotlib
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN if [ "${TARGETARCH}" != "amd64" ]; then \
+        echo "Dockerfile.cli.cuda only supports TARGETARCH=amd64" >&2; \
+        exit 1; \
+    fi
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    build-essential \
+    ca-certificates \
+    curl \
+    ffmpeg \
+    git \
+    libasound2t64 \
+    libegl1 \
+    libgomp1 \
+    libgl1 \
+    libgl-dev \
+    libglfw3 \
+    libglib2.0-0 \
+    libopengl0 \
+    libportaudio2 \
+    libsdl2-2.0-0 \
+    libsm6 \
+    libsndfile1 \
+    libx11-6 \
+    libx11-dev \
+    libxcursor1 \
+    libxext6 \
+    libxi6 \
+    libxinerama1 \
+    libxrandr2 \
+    libxrender1 \
+    libxxf86vm1 \
+    pkg-config \
+    tini \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh" -o /tmp/miniforge.sh \
+    && bash /tmp/miniforge.sh -b -p "${CONDA_DIR}" \
+    && rm -f /tmp/miniforge.sh \
+    && conda config --system --set auto_update_conda false \
+    && conda install -y python=3.11 pip \
+    && conda clean -afy
+
+WORKDIR /app
+
+COPY requirements/ /tmp/requirements/
+
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install \
+        -r /tmp/requirements/core.requirements.txt \
+        -r /tmp/requirements/cuda.requirements.txt \
+    && python -m pip install \
+        torch-tensorrt \
+        tensorrt \
+        --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
+    && rm -rf /root/.cache/pip /tmp/requirements
+
+COPY . /app
+
+RUN mkdir -p /app/config/ultralytics /app/assets/ui/icons
+
+ENTRYPOINT ["/usr/bin/tini", "--", "python", "main.py"]
+CMD ["--help"]
