@@ -72,10 +72,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && if [ -x "${ffmpeg_dir}/ffplay" ]; then ln -sf "${ffmpeg_dir}/ffplay" /usr/local/bin/ffplay; fi \
     && rm -rf /var/lib/apt/lists/*
 
-RUN case "${TARGETARCH}" in \
+RUN target_arch="${TARGETARCH}" \
+    && if [ -z "${target_arch}" ]; then \
+        case "$(uname -m)" in \
+            "x86_64") target_arch="amd64" ;; \
+            "aarch64"|"arm64") target_arch="arm64" ;; \
+            *) echo "Unsupported host architecture: $(uname -m)" >&2; exit 1 ;; \
+        esac; \
+    fi \
+    && case "${target_arch}" in \
         "amd64") installer_arch="x86_64" ;; \
         "arm64") installer_arch="aarch64" ;; \
-        *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+        *) echo "Unsupported TARGETARCH: ${target_arch}" >&2; exit 1 ;; \
     esac \
     && curl -fsSL "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${installer_arch}.sh" -o /tmp/miniforge.sh \
     && bash /tmp/miniforge.sh -b -p "${CONDA_DIR}" \

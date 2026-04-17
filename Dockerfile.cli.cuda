@@ -15,8 +15,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN if [ "${TARGETARCH}" != "amd64" ]; then \
-        echo "Dockerfile.cli.cuda only supports TARGETARCH=amd64" >&2; \
+RUN target_arch="${TARGETARCH}" \
+    && if [ -z "${target_arch}" ]; then \
+        case "$(uname -m)" in \
+            "x86_64") target_arch="amd64" ;; \
+            "aarch64"|"arm64") target_arch="arm64" ;; \
+            *) echo "Unsupported host architecture: $(uname -m)" >&2; exit 1 ;; \
+        esac; \
+    fi \
+    && if [ "${target_arch}" != "amd64" ]; then \
+        echo "Dockerfile.cli.cuda only supports amd64, got ${target_arch}" >&2; \
         exit 1; \
     fi
 
