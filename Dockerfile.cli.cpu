@@ -63,6 +63,7 @@ RUN install -d /etc/apt/keyrings \
         > /etc/apt/sources.list.d/jellyfin.sources
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
     jellyfin-ffmpeg7 \
     && ffmpeg_dir="$(find /usr -maxdepth 3 -type f -path '*/jellyfin-ffmpeg*/ffmpeg' | head -n 1)" \
     && test -n "${ffmpeg_dir}" \
