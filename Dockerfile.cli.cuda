@@ -58,14 +58,14 @@ RUN install -d /etc/apt/keyrings \
         | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg \
     && . /etc/os-release \
     && dpkg_architecture="$(dpkg --print-architecture)" \
-    && cat > /etc/apt/sources.list.d/jellyfin.sources <<EOF
-Types: deb
-URIs: https://repo.jellyfin.org/${ID}
-Suites: ${VERSION_CODENAME}
-Components: main
-Architectures: ${dpkg_architecture}
-Signed-By: /etc/apt/keyrings/jellyfin.gpg
-EOF
+    && printf '%s\n' \
+        'Types: deb' \
+        "URIs: https://repo.jellyfin.org/${ID}" \
+        "Suites: ${VERSION_CODENAME}" \
+        'Components: main' \
+        "Architectures: ${dpkg_architecture}" \
+        'Signed-By: /etc/apt/keyrings/jellyfin.gpg' \
+        > /etc/apt/sources.list.d/jellyfin.sources
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     jellyfin-ffmpeg7 \
